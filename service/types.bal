@@ -49,3 +49,11 @@ type UpdateReservationError record {|
     *http:NotFound;
     string body;
 |};
+
+type ReservationRequest record {
+    string checkinDate;
+    string checkoutDate;
+    int rate;
+    User user;
+    string roomType;
+};

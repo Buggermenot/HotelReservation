@@ -33,4 +33,29 @@ service /reservations on new http:Listener(9090) {
     resource function get roomTypes(string checkinDate, string checkoutDate, int guestCapacity) returns RoomType[]|error {
         return getAvailableRoomTypes(checkinDate, checkoutDate, guestCapacity);
     }
+
+    resource function post .(NewReservationRequest payload) returns Reservation|error|NewReservationError|error {
+        Room| () availableRoom = check getAvailableRoom(payload.checkinDate, payload.checkoutDate, payload.roomType);
+        if (availableRoom is ()){
+            return {body: "No rooms available for the given dates"};
+        }
+
+        Reservation reservation = {
+            id: roomReservations.length() + 1,
+            room: availableRoom,
+            checkinDate: payload.checkinDate,
+            checkoutDate: payload.checkoutDate,
+            user: payload.user
+        };
+        roomReservations.add(reservation);
+        sendNotificationForReservation(reservation, "Created");
+        return reservation;
+    }
+
+    resource function get users/[string userId]() returns Reservation[] {
+        Reservation[] reservations = from Reservation r in roomReservations
+        where r.user.id == userId
+        select r;
+        return reservations;
+    }
 }
